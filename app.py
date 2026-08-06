@@ -87,7 +87,7 @@ if st.button("Generate Actionable Advice"):
                 
                 # Generate content using Gemini 2.5 Flash
                 response = client.models.generate_content(
-                    model="gemini-2.5-flash",
+                    model="gemini-3.5-flash",
                     contents=prompt
                 )
                 
