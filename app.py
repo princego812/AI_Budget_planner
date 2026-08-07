@@ -321,23 +321,27 @@ with tab_wealth:
             
             st.markdown("<br>", unsafe_allow_html=True)
             if st.button("🚀 Execute Portfolio Sweep"):
-                # Append or update the specific categories
                 df = st.session_state.expenses_df
                 
-                def add_or_update(cat, amt):
-                    nonlocal df
-                    if cat in df["Category"].values:
-                        df.loc[df["Category"] == cat, "Amount"] += amt
+                # Pass df as an argument and return the updated version to avoid scope errors
+                def add_or_update(current_df, cat, amt):
+                    if cat in current_df["Category"].values:
+                        current_df.loc[current_df["Category"] == cat, "Amount"] += amt
                     else:
                         new_row = pd.DataFrame([{"Category": cat, "Amount": amt}])
-                        df = pd.concat([df, new_row], ignore_index=True)
+                        current_df = pd.concat([current_df, new_row], ignore_index=True)
+                    return current_df
                 
-                if val_savings > 0: add_or_update("Savings (Liquid)", val_savings)
-                if val_short > 0: add_or_update("Investments (Short-Term)", val_short)
-                if val_long > 0: add_or_update("Investments (Long-Term)", val_long)
+                if val_savings > 0: 
+                    df = add_or_update(df, "Savings (Liquid)", val_savings)
+                if val_short > 0: 
+                    df = add_or_update(df, "Investments (Short-Term)", val_short)
+                if val_long > 0: 
+                    df = add_or_update(df, "Investments (Long-Term)", val_long)
                 
                 st.session_state.expenses_df = df
                 st.rerun()
+                
     elif unalloc < 0:
         st.error(f"Cannot distribute wealth. You are currently running a deficit of {curr}{abs(unalloc):,.2f}.")
     else:
