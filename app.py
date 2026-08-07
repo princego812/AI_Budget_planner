@@ -128,7 +128,7 @@ def init_state():
         "expenses_df": pd.DataFrame([{"Category": "Pending Setup...", "Amount": 0.0}]),
         "chat_history": [{"role": "assistant", "content": "💠 **Terminal Active.** Enter your income and list your expenses. I will architect your budget."}],
         "wealth_tier": "Unranked",
-        "split_ratios": {"Savings": 20, "Short_Term": 30, "Long_Term": 50}
+        "split_ratios": {"Savings": 15, "Short_Term": 25, "Long_Term": 40, "Fun_Money": 10, "Entertainment": 10}
     }
     for key, val in defaults.items():
         if key not in st.session_state:
@@ -167,7 +167,7 @@ def calc_metrics(df, income):
 # ==========================================
 with st.sidebar:
     st.markdown("## 💠 FinAI Enterprise")
-    st.caption("v2.0.0 | AI Wealth Architect")
+    st.caption("v2.1.0 | AI Wealth Architect")
     st.divider()
     
     api_key = st.text_input("Gemini API Key", type="password")
@@ -185,6 +185,8 @@ with st.sidebar:
     st.session_state.split_ratios["Savings"] = st.slider("Liquid Savings (%)", 0, 100, st.session_state.split_ratios["Savings"])
     st.session_state.split_ratios["Short_Term"] = st.slider("Short-Term Investing (%)", 0, 100, st.session_state.split_ratios["Short_Term"])
     st.session_state.split_ratios["Long_Term"] = st.slider("Long-Term Investing (%)", 0, 100, st.session_state.split_ratios["Long_Term"])
+    st.session_state.split_ratios["Fun_Money"] = st.slider("Fun Money (%)", 0, 100, st.session_state.split_ratios["Fun_Money"])
+    st.session_state.split_ratios["Entertainment"] = st.slider("Entertainment (%)", 0, 100, st.session_state.split_ratios["Entertainment"])
     
     # Auto-balance validator
     total_ratio = sum(st.session_state.split_ratios.values())
@@ -300,8 +302,8 @@ with tab_budget:
 # TAB 3: WEALTH ALLOCATOR (THE SPLIT MECHANIC)
 # ------------------------------------------
 with tab_wealth:
-    st.subheader("Automated Wealth Distribution")
-    st.markdown("Route unallocated capital safely into **Savings**, **Short-Term**, and **Long-Term** portfolios.")
+    st.subheader("Automated Wealth & Lifestyle Distribution")
+    st.markdown("Route unallocated capital safely into **Investments** and **Lifestyle** portfolios.")
     
     if unalloc > 0:
         if total_ratio != 100:
@@ -310,20 +312,27 @@ with tab_wealth:
             st.success(f"**{curr}{unalloc:,.2f}** is awaiting distribution.")
             
             sweep_col1, sweep_col2, sweep_col3 = st.columns(3)
+            sweep_col4, sweep_col5 = st.columns(2)
             
             val_savings = unalloc * (st.session_state.split_ratios["Savings"] / 100)
             val_short = unalloc * (st.session_state.split_ratios["Short_Term"] / 100)
             val_long = unalloc * (st.session_state.split_ratios["Long_Term"] / 100)
+            val_fun = unalloc * (st.session_state.split_ratios["Fun_Money"] / 100)
+            val_ent = unalloc * (st.session_state.split_ratios["Entertainment"] / 100)
             
             sweep_col1.metric("💧 Liquid Savings", f"{curr}{val_savings:,.2f}", f"{st.session_state.split_ratios['Savings']}%")
             sweep_col2.metric("📈 Short-Term Investing", f"{curr}{val_short:,.2f}", f"{st.session_state.split_ratios['Short_Term']}%")
             sweep_col3.metric("🏛️ Long-Term Wealth", f"{curr}{val_long:,.2f}", f"{st.session_state.split_ratios['Long_Term']}%")
             
             st.markdown("<br>", unsafe_allow_html=True)
+            
+            sweep_col4.metric("🎉 Fun Money", f"{curr}{val_fun:,.2f}", f"{st.session_state.split_ratios['Fun_Money']}%")
+            sweep_col5.metric("🎬 Entertainment", f"{curr}{val_ent:,.2f}", f"{st.session_state.split_ratios['Entertainment']}%")
+            
+            st.markdown("<br>", unsafe_allow_html=True)
             if st.button("🚀 Execute Portfolio Sweep"):
                 df = st.session_state.expenses_df
                 
-                # Pass df as an argument and return the updated version to avoid scope errors
                 def add_or_update(current_df, cat, amt):
                     if cat in current_df["Category"].values:
                         current_df.loc[current_df["Category"] == cat, "Amount"] += amt
@@ -332,12 +341,11 @@ with tab_wealth:
                         current_df = pd.concat([current_df, new_row], ignore_index=True)
                     return current_df
                 
-                if val_savings > 0: 
-                    df = add_or_update(df, "Savings (Liquid)", val_savings)
-                if val_short > 0: 
-                    df = add_or_update(df, "Investments (Short-Term)", val_short)
-                if val_long > 0: 
-                    df = add_or_update(df, "Investments (Long-Term)", val_long)
+                if val_savings > 0: df = add_or_update(df, "Savings (Liquid)", val_savings)
+                if val_short > 0: df = add_or_update(df, "Investments (Short-Term)", val_short)
+                if val_long > 0: df = add_or_update(df, "Investments (Long-Term)", val_long)
+                if val_fun > 0: df = add_or_update(df, "Fun Money", val_fun)
+                if val_ent > 0: df = add_or_update(df, "Entertainment", val_ent)
                 
                 st.session_state.expenses_df = df
                 st.rerun()
@@ -351,7 +359,7 @@ with tab_wealth:
     st.divider()
     st.subheader("Current Portfolio Structure")
     df_port = st.session_state.expenses_df
-    port_mask = df_port["Category"].str.contains("sav|invest|short|long", case=False, na=False)
+    port_mask = df_port["Category"].str.contains("sav|invest|short|long|fun|entertainment", case=False, na=False)
     port_data = df_port.loc[port_mask]
     
     if not port_data.empty and port_data["Amount"].sum() > 0:
@@ -366,7 +374,7 @@ with tab_wealth:
         fig_bar.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", font=dict(color="#94A3B8"))
         st.plotly_chart(fig_bar, use_container_width=True)
     else:
-        st.caption("No wealth allocations detected yet. Execute a sweep or add investments in the Budget Engine.")
+        st.caption("No wealth or lifestyle allocations detected yet. Execute a sweep or add categories in the Budget Engine.")
 
 # ------------------------------------------
 # TAB 4: NEURAL ADVISOR (AI CHAT)
@@ -402,17 +410,19 @@ with tab_ai:
                                 The user earns {curr}{income}. They are describing their expenses: "{prompt}"
                                 
                                 Task 1: Extract expenses into a JSON array. 
-                                Task 2: If there is remaining money ({income} minus total expenses), DO NOT dump it all into one 'Investments' category. 
-                                Instead, split the remaining money into three specific categories:
-                                - "Savings (Liquid)" (20% of remainder)
-                                - "Investments (Short-Term)" (30% of remainder)
-                                - "Investments (Long-Term)" (50% of remainder)
+                                Task 2: If there is remaining money ({income} minus total expenses), DO NOT dump it all into one category. 
+                                Instead, split the remaining money into these specific categories using the user's targeted percentages:
+                                - "Savings (Liquid)" ({st.session_state.split_ratios['Savings']}% of remainder)
+                                - "Investments (Short-Term)" ({st.session_state.split_ratios['Short_Term']}% of remainder)
+                                - "Investments (Long-Term)" ({st.session_state.split_ratios['Long_Term']}% of remainder)
+                                - "Fun Money" ({st.session_state.split_ratios['Fun_Money']}% of remainder)
+                                - "Entertainment" ({st.session_state.split_ratios['Entertainment']}% of remainder)
                                 
                                 Format EXACTLY as: [{{"Category": "Rent", "Amount": 1000}}]
                                 
                                 Task 3: Type exactly '===ADVICE===' after the JSON.
                                 
-                                Task 4: Provide a brief, punchy financial analysis covering their savings rate and immediate risks.
+                                Task 4: Provide a brief, punchy financial analysis covering their savings rate, lifestyle allocation, and immediate risks.
                                 """
                                 response = client.models.generate_content(model="gemini-3.5-flash-lite", contents=sys_prompt)
                                 
@@ -443,7 +453,7 @@ with tab_ai:
                                 Income: {curr}{income} | Unallocated: {curr}{unalloc} | Wealth Tier: {st.session_state.wealth_tier}
                                 Budget: \n{exp_str}
                                 
-                                Answer directly, technically, and ruthlessly optimize their wealth. Keep it under 4 sentences.
+                                Answer directly, technically, and ruthlessly optimize their wealth while balancing their lifestyle constraints. Keep it under 4 sentences.
                                 """
                                 response = client.models.generate_content(
                                     model="gemini-3.5-flash-lite", 
