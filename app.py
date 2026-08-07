@@ -151,7 +151,7 @@ if prompt := st.chat_input("Message FinAI..."):
                         - 2-3 Bullet points about Risks in their current spending.
                         - 1 piece of Advice to optimize.
                         """
-                        response = client.models.generate_content(model="gemini-3.5-flash", contents=sys_prompt)
+                        response = client.models.generate_content(model="gemini-3.5-flash-lite", contents=sys_prompt)
                         
                         if "===ADVICE===" in response.text:
                             json_part, advice_part = response.text.split("===ADVICE===")
@@ -185,7 +185,7 @@ if prompt := st.chat_input("Message FinAI..."):
                         Answer the user's question directly, briefly, and accurately based on their current budget. Keep it under 4 sentences.
                         """
                         response = client.models.generate_content(
-                            model="gemini-3.5-flash", 
+                            model="gemini-3.5-flash-lite", 
                             contents=f"{sys_prompt}\n\nUser Question: {prompt}"
                         )
                         st.markdown(response.text)
