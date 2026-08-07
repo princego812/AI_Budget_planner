@@ -151,7 +151,7 @@ if prompt := st.chat_input("Message FinAI..."):
                         - 2-3 Bullet points about Risks in their current spending.
                         - 1 piece of Advice to optimize.
                         """
-                        response = client.models.generate_content(model="gemini-2.5-flash", contents=sys_prompt)
+                        response = client.models.generate_content(model="gemini-3.5-flash", contents=sys_prompt)
                         
                         if "===ADVICE===" in response.text:
                             json_part, advice_part = response.text.split("===ADVICE===")
