@@ -185,7 +185,7 @@ if prompt := st.chat_input("Message FinAI..."):
                         Answer the user's question directly, briefly, and accurately based on their current budget. Keep it under 4 sentences.
                         """
                         response = client.models.generate_content(
-                            model="gemini-2.5-flash", 
+                            model="gemini-3.5-flash", 
                             contents=f"{sys_prompt}\n\nUser Question: {prompt}"
                         )
                         st.markdown(response.text)
